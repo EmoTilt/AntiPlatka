@@ -7,6 +7,6 @@ export default class ReadyEvent implements Event {
     once = true;
 
     execute(client: BotClient): void {
-        client.logger.send(`Ready! Logged in as ${client.user?.tag}`);
+        client.logger.send(`Ready! Logged in as ${client.user?.tag}.`);
     }
 }

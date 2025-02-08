@@ -8,7 +8,8 @@ export default class InteractionCreate implements Event {
 
     execute(client: BotClient, interaction: BaseInteraction): void {
         if (interaction.isChatInputCommand()) {
-            client.commands.get(interaction.commandName)?.execute(client, interaction)
+            client.commands.get(interaction.commandName)?.execute(client, interaction);
+            client.logger.send(`**${interaction.user.tag}** used the **/${interaction.commandName}** command.`)
         }
     }
 }
