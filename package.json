@@ -1,0 +1,19 @@
+{
+  "name": "antiplatka",
+  "module": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/node": "^22.13.1",
+    "discord.js": "^14.17.3",
+    "dotenv": "^16.4.7"
+  }
+}
