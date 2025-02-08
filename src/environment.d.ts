@@ -1,10 +1,10 @@
 declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      TOKEN: string;
-      clientID: string;
+    namespace NodeJS {
+        interface ProcessEnv {
+            TOKEN: string;
+            clientID: string;
+        }
     }
-  }
 }
 
 // If this file has no import/export statements (i.e. is a script)

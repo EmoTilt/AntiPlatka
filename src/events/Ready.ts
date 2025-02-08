@@ -1,4 +1,4 @@
-import { Events, Client } from 'discord.js';
+import { Events } from 'discord.js';
 import { Event } from '../interfaces';
 import BotClient from '../structures/Client';
 

@@ -1,25 +1,32 @@
-import { Client, TextChannel } from 'discord.js';
+/* eslint-disable no-console */
+import { TextChannel } from 'discord.js';
+import BotClient from './Client';
 
 export default class Logger {
-    private client: Client;
+    private client: BotClient;
     private logChannelId: string | null;
 
-    constructor(client: Client, logChannelId: string | null = null) {
+    constructor(client: BotClient, logChannelId: string | null = null) {
         this.client = client;
         this.logChannelId = logChannelId;
     }
 
-    public async send(message: string): Promise<void> {
-        console.log(message.replaceAll("**", ""));
+    public send(message: string): void {
+        console.log(message.replaceAll('**', ''));
 
         if (this.logChannelId) {
-            const channel = this.client.channels.cache.get(this.logChannelId) as TextChannel | undefined;
+            const channel = this.client.channels.cache.get(
+                this.logChannelId,
+            ) as TextChannel | undefined;
             if (channel && channel.isTextBased()) {
-                try {
-                    await channel.send(message);
-                } catch (error) {
-                    console.error('Не удалось отправить сообщение в канал логов:', error);
-                }
+                channel
+                    .send(message)
+                    .catch(error =>
+                        console.error(
+                            'Не удалось отправить сообщение в канал логов:',
+                            error,
+                        ),
+                    );
             }
         }
     }
@@ -28,12 +35,17 @@ export default class Logger {
         console.error(`[ERROR] ${message}`);
 
         if (this.logChannelId) {
-            const channel = this.client.channels.cache.get(this.logChannelId) as TextChannel | undefined;
+            const channel = this.client.channels.cache.get(
+                this.logChannelId,
+            ) as TextChannel | undefined;
             if (channel && channel.isTextBased()) {
                 try {
                     await channel.send(`[ERROR] ${message}`);
                 } catch (error) {
-                    console.error('Не удалось отправить сообщение в канал логов:', error);
+                    console.error(
+                        'Не удалось отправить сообщение в канал логов:',
+                        error,
+                    );
                 }
             }
         }

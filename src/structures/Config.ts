@@ -13,7 +13,7 @@ class Config {
                 GatewayIntentBits.GuildMessages,
                 GatewayIntentBits.MessageContent,
                 GatewayIntentBits.GuildMembers,
-            ]
+            ],
         };
     }
 
