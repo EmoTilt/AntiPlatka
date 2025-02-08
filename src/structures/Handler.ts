@@ -33,7 +33,7 @@ export default class Handler {
                     this.client.commands.set(command.slash.name, command);
                     commands.push(command.slash.toJSON())
                 } else {
-                    console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+                    this.client.logger.send(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
                 }
             }
         }
@@ -47,9 +47,9 @@ export default class Handler {
                     { body: commands },
                 );
 
-                console.log(`Successfully reloaded ${commands.length} application (/) commands.`);
+                this.client.logger.send(`Successfully reloaded ${commands.length} application (/) commands.`);
             } catch (error) {
-                console.error(error);
+                this.client.logger.error(error);
             }
         })();
     }
