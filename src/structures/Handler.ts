@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 // я ебал типизировать это
 
@@ -33,10 +37,7 @@ export default class Handler {
 
             for (const file of commandFiles) {
                 const filePath = path.join(commandsPath, file);
-                const { default: CommandClass } = (await import(filePath)) as {
-                    default: new () => Command;
-                };
-                const command: Command = new CommandClass();
+                const command: Command = new (await import(filePath)).default();
 
                 if ('slash' in command && 'execute' in command) {
                     this.client.commands.set(command.slash.name, command);
@@ -65,10 +66,7 @@ export default class Handler {
 
         for (const file of eventFiles) {
             const filePath = path.join(eventsPath, file);
-            const { default: EventClass } = (await import(filePath)) as {
-                default: new () => Event;
-            };
-            const event: Event = new EventClass();
+            const event: Event = new (await import(filePath)).default();
 
             if (event.once) {
                 this.client.once(event.name, (...args) =>
