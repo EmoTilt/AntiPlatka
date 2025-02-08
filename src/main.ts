@@ -4,4 +4,4 @@ dotenv.config();
 
 const client = new BotClient();
 
-client.init()
+client.init();

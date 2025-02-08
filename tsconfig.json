@@ -6,7 +6,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "lib": [
+      "ES2021.String"
+    ]
   },
   "include": ["src/**/*"]
 }

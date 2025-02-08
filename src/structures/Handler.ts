@@ -1,7 +1,7 @@
 import { REST, RESTPostAPIChatInputApplicationCommandsJSONBody, Routes } from "discord.js";
 import BotClient from "./Client";
-import path from "node:path"
-import fs from "node:fs"
+import path from "node:path";
+import fs from "node:fs";
 import Command from "./Command";
 import { Event } from "../interfaces";
 
@@ -13,8 +13,8 @@ export default class Handler {
     }
 
     public async run() {
-        this.events()
-        this.commands()
+        this.events();
+        this.commands();
     }
 
     private async commands() {
@@ -31,12 +31,12 @@ export default class Handler {
                 const command: Command = new ((await import(filePath)).default);
                 if ('slash' in command && 'execute' in command) {
                     this.client.commands.set(command.slash.name, command);
-                    commands.push(command.slash.toJSON())
+                    commands.push(command.slash.toJSON());
                 } else {
                     this.client.logger.send(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-                }
-            }
-        }
+                };
+            };
+        };
 
         // Загрузка slash комманд
         const rest = new REST().setToken(process.env.TOKEN);
@@ -50,7 +50,7 @@ export default class Handler {
                 this.client.logger.send(`Successfully reloaded ${commands.length} application (/) commands.`);
             } catch (error) {
                 this.client.logger.error(error);
-            }
+            };
         })();
     }
 
@@ -65,7 +65,7 @@ export default class Handler {
                 this.client.once(event.name, (...args) => event.execute(this.client, ...args));
             } else {
                 this.client.on(event.name, (...args) => event.execute(this.client, ...args));
-            }
-        }
-    }
-}
+            };
+        };
+    };
+};
