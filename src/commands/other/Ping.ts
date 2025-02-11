@@ -9,7 +9,7 @@ export default class PingCommand implements Command {
 
     execute(client: BotClient, interaction: ChatInputCommandInteraction): void {
         interaction
-            .reply(`🏓 Понг!`)
+            .reply(`👆 Подначить!`)
             .catch(error => client.logger.error(error));
     }
 }
