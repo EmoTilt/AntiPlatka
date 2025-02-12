@@ -2,7 +2,7 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 import Command from '../../structures/Command';
 import BotClient from '../../structures/Client';
 
-export default class PingCommand implements Command {
+export default class HuifyCommand implements Command {
     slash = new SlashCommandBuilder()
         .setName('huify')
         .setDescription('Имя - хуимя')
