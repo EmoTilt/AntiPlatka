@@ -15,7 +15,7 @@ export default class HuifyCommand implements Command {
         const name = interaction.options.getString('Имя');
 
         interaction
-            .reply(`Ху` + name.slice(1))
+            .reply(name + ` - ху` + name.slice(1))
             .catch(error => client.logger.error(error));
     }
 }
