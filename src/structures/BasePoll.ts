@@ -6,11 +6,14 @@ export abstract class BasePoll {
     private timeout!: Timer;
     channel: TextChannel;
 
+    protected abstract get action(): string;
+    protected abstract get textVotePass(): string;
+    protected abstract get textVoteFailed(): string;
+
     constructor(
         protected client: BotClient,
         protected targetMember: GuildMember,
         private duration: number,
-        private action: 'add' | 'ban',
         private content: string,
         private question: string,
     ) {
@@ -65,21 +68,11 @@ export abstract class BasePoll {
 
     protected finishPoll(yes: number, no: number) {
         this.pollMessage.delete().catch(error => this.client.logger.error(error));
-        const lines = {
-            add: {
-                true: `<@${this.targetMember.id}> прошёл на сервер!`,
-                false: `<@${this.targetMember.id}> не прошёл на сервер! Порог меньше 70%.`,
-            },
-            ban: {
-                true: `<@${this.targetMember.id}> был забанен на этом сервере.`,
-                false: `<@${this.targetMember.id}> пощадили на этом сервере.`,
-            },
-        };
         const percent = (yes / (yes + no)) * 100;
         if (this.validateResult(yes, no)) {
             this.channel
                 .send({
-                    content: lines[this.action].true,
+                    content: this.textVotePass,
                     embeds: [
                         new EmbedBuilder()
                             .setColor('#008000')
@@ -94,7 +87,7 @@ export abstract class BasePoll {
         } else {
             this.channel
                 .send({
-                    content: lines[this.action].false,
+                    content: this.textVoteFailed,
                     embeds: [
                         new EmbedBuilder().setColor('#008000').addFields({
                             name: '✅ За',

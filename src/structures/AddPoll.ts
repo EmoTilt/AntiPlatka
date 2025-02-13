@@ -3,12 +3,23 @@ import { BasePoll } from './BasePoll';
 import BotClient from './Client';
 
 export class AddPoll extends BasePoll {
+    protected get action(): string {
+        return 'add';
+    }
+
+    protected get textVotePass(): string {
+        return `<@${this.targetMember.id}> прошёл на сервер!`;
+    }
+
+    protected get textVoteFailed(): string {
+        return `<@${this.targetMember.id}> не прошёл на сервер! Порог меньше 70%.`;
+    }
+
     constructor(client: BotClient, targetMember: GuildMember, duration: number) {
         super(
             client,
             targetMember,
             duration,
-            'add',
             `<@${targetMember.id}>`,
             'На сервер зашёл новый участник. Давайте решим: стоит ли его принять в наш Discord сервер? Порог - 70% голосов "Да"',
         );
@@ -17,7 +28,7 @@ export class AddPoll extends BasePoll {
     protected handleResults(poll: Poll): void {
         const yes = poll.answers.get(1)?.voteCount || 0;
         const no = poll.answers.get(2)?.voteCount || 0;
-        const channel = this.client.channels.cache.get('1339382880094261248') as TextChannel;
+        const channel = this.client.channels.cache.get(this.client.config.bannedchannel) as TextChannel;
 
         if (this.validateResult(yes, no)) {
             this.targetMember.roles
