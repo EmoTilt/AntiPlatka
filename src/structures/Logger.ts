@@ -25,7 +25,7 @@ export default class Logger {
     }
 
     public async error(message: unknown): Promise<void> {
-        console.error(`@everyone **[ERROR]** ${message}`);
+        console.error(`[ERROR] ${message}`);
 
         if (this.logChannelId) {
             const channel = this.client.channels.cache.get(this.logChannelId) as TextChannel | undefined;
