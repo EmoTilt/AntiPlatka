@@ -2,7 +2,7 @@ import { GuildMember, Poll, TextChannel } from 'discord.js';
 import { BasePoll } from './BasePoll';
 import BotClient from './Client';
 
-export class addPoll extends BasePoll {
+export class AddPoll extends BasePoll {
     constructor(client: BotClient, targetMember: GuildMember, duration: number) {
         super(
             client,
@@ -19,7 +19,7 @@ export class addPoll extends BasePoll {
         const no = poll.answers.get(2)?.voteCount || 0;
         const channel = this.client.channels.cache.get('1339382880094261248') as TextChannel;
 
-        if (this.win(yes, no)) {
+        if (this.validateResult(yes, no)) {
             this.targetMember.roles
                 .add(this.client.config.role)
                 .catch(error => this.client.logger.error(error));
@@ -34,6 +34,7 @@ export class addPoll extends BasePoll {
                 )
                 .catch(error => this.client.logger.error(error));
         }
+
         this.client.db.userPoll
             .delete({
                 where: {
@@ -41,6 +42,7 @@ export class addPoll extends BasePoll {
                 },
             })
             .catch(error => this.client.logger.error(error));
+
         this.finishPoll(yes, no);
     }
 }

@@ -42,7 +42,7 @@ export default class Handler {
                 }
             }
 
-            this.slashLoader(commands).catch(error => this.client.logger.error(error));
+            this.slashLoader(commands);
         }
     }
 
@@ -64,8 +64,7 @@ export default class Handler {
         }
     }
 
-    private async slashLoader(commands: ApplicationCommandDataResolvable[]) {
-        await this.client.application?.commands.set(commands);
+    private slashLoader(commands: ApplicationCommandDataResolvable[]) {
         this.client.guilds.cache.forEach(guild => {
             guild.commands.set([]).catch(error => this.client.logger.error(error));
             this.client.logger.send(`Successfully reloaded ${commands.length} guild (/) commands.`);

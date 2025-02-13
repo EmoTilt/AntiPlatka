@@ -63,7 +63,7 @@ export abstract class BasePoll {
         clearTimeout(this.timeout);
     }
 
-    finishPoll(yes: number, no: number) {
+    protected finishPoll(yes: number, no: number) {
         this.pollMessage.delete().catch(error => this.client.logger.error(error));
         const lines = {
             add: {
@@ -76,7 +76,7 @@ export abstract class BasePoll {
             },
         };
         const percent = (yes / (yes + no)) * 100;
-        if (this.win(yes, no)) {
+        if (this.validateResult(yes, no)) {
             this.channel
                 .send({
                     content: lines[this.action].true,
@@ -106,7 +106,7 @@ export abstract class BasePoll {
         }
     }
 
-    win(yes: number, no: number) {
+    public validateResult(yes: number, no: number) {
         const total = yes + no;
 
         if (yes === 0 && no === 0) {
