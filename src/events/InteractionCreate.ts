@@ -17,9 +17,7 @@ export default class InteractionCreate implements Event {
                     .catch(error => client.logger.error(error));
                 return;
             }
-            client.commands
-                .get(interaction.commandName)
-                ?.execute(client, interaction);
+            client.commands.get(interaction.commandName)?.execute(client, interaction);
             client.logger.send(
                 `**${interaction.user.tag}** used the **/${interaction.commandName}** command.`,
             );

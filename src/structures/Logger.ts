@@ -15,37 +15,25 @@ export default class Logger {
         console.log(message.replaceAll('**', ''));
 
         if (this.logChannelId) {
-            const channel = this.client.channels.cache.get(
-                this.logChannelId,
-            ) as TextChannel | undefined;
+            const channel = this.client.channels.cache.get(this.logChannelId) as TextChannel | undefined;
             if (channel && channel.isTextBased()) {
                 channel
                     .send(message)
-                    .catch(error =>
-                        console.error(
-                            'Не удалось отправить сообщение в канал логов:',
-                            error,
-                        ),
-                    );
+                    .catch(error => console.error('Не удалось отправить сообщение в канал логов:', error));
             }
         }
     }
 
     public async error(message: unknown): Promise<void> {
-        console.error(`[ERROR] ${message}`);
+        console.error(`@everyone **[ERROR]** ${message}`);
 
         if (this.logChannelId) {
-            const channel = this.client.channels.cache.get(
-                this.logChannelId,
-            ) as TextChannel | undefined;
+            const channel = this.client.channels.cache.get(this.logChannelId) as TextChannel | undefined;
             if (channel && channel.isTextBased()) {
                 try {
-                    await channel.send(`[ERROR] ${message}`);
+                    await channel.send(`**[ERROR]** ${message}`);
                 } catch (error) {
-                    console.error(
-                        'Не удалось отправить сообщение в канал логов:',
-                        error,
-                    );
+                    console.error('Не удалось отправить сообщение в канал логов:', error);
                 }
             }
         }

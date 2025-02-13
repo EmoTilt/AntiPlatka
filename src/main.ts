@@ -1,3 +1,4 @@
 import BotClient from './structures/Client';
+import Config from './structures/Config';
 
-new BotClient();
+new BotClient(new Config());

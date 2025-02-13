@@ -9,6 +9,7 @@
     "lint": "eslint 'src/**/*.{ts,tsx}'"
   },
   "dependencies": {
+    "@prisma/client": "^6.3.1",
     "discord.js": "^14.17.3",
     "dotenv": "^16.4.7"
   },
@@ -24,6 +25,7 @@
     "eslint-plugin-typescript": "^0.14.0",
     "globals": "^15.14.0",
     "prettier": "^3.4.2",
+    "prisma": "^6.3.1",
     "typescript-eslint": "^8.23.0"
   },
   "peerDependencies": {

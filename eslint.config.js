@@ -18,7 +18,7 @@ export default [
             prettier,
         },
         rules: {
-            'no-console': 'warn', // Предупреждение на использование console.log
+            'no-console': 'warn', // Предупреждение на использование console.log, используйте client.logger.send()
             '@typescript-eslint/no-unused-vars': 'warn', // Предупреждение на неиспользуемые переменные
             '@typescript-eslint/no-explicit-any': 'warn', // Предупреждение на использование any
             '@typescript-eslint/explicit-function-return-type': 'off', // Не требовать явного указания возвращаемого типа
@@ -33,7 +33,7 @@ export default [
             '@typescript-eslint/no-unsafe-call': 'warn', // Предупреждение на небезопасные вызовы
 
             'prettier/prettier': [
-                'error',
+                'warn',
                 {
                     endOfLine: 'auto',
                 },
