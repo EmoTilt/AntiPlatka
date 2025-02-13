@@ -7,11 +7,11 @@ export default class HuifyCommand implements Command {
         .setName('huify')
         .setDescription('Имя - хуимя')
         .addStringOption(option =>
-            option.setName('Имя').setDescription('Имя чтобы сделать хуимя').setRequired(true),
+            option.setName('name').setDescription('Имя чтобы сделать хуимя').setRequired(true),
         ) as SlashCommandBuilder;
 
     execute(client: BotClient, interaction: ChatInputCommandInteraction): void {
-        const name = interaction.options.getString('Имя');
+        const name = interaction.options.getString('name');
 
         interaction.reply(name + ` - ху` + name?.slice(1)).catch(error => client.logger.error(error));
     }
