@@ -24,17 +24,15 @@ export default class Logger {
         }
     }
 
-    public async error(message: unknown): Promise<void> {
+    public error(message: unknown): void {
         console.error(message);
 
         if (this.logChannelId) {
             const channel = this.client.channels.cache.get(this.logChannelId) as TextChannel | undefined;
             if (channel && channel.isTextBased()) {
-                try {
-                    await channel.send(`[ERROR] ${message}`);
-                } catch (error) {
-                    console.error('Не удалось отправить сообщение в канал логов:', error);
-                }
+                channel
+                    .send(`[ERROR] ${message}`)
+                    .catch(error => console.error('Не удалось отправить сообщение в канал логов:', error));
             }
         }
     }

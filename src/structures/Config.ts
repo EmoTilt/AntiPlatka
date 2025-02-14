@@ -4,7 +4,8 @@ class Config {
     private readonly _logChannel: string;
     private readonly _voteChannel: string;
     private readonly _role: string;
-    private readonly _bannedchannel: string;
+    private readonly _bannedChannel: string;
+    private readonly _owner: string;
 
     private readonly _clientOptions: ClientOptions;
 
@@ -12,7 +13,8 @@ class Config {
         this._logChannel = process.env.LOGCHANNEL;
         this._voteChannel = process.env.VOTECHANNEL;
         this._role = process.env.ROLE;
-        this._bannedchannel = process.env.BANNEDCHANNEL;
+        this._bannedChannel = process.env.BANNEDCHANNEL;
+        this._owner = process.env.OWNER;
 
         this._clientOptions = {
             intents: [
@@ -36,8 +38,12 @@ class Config {
         return this._role;
     }
 
-    get bannedchannel(): string {
-        return this._bannedchannel;
+    get bannedChannel(): string {
+        return this._bannedChannel;
+    }
+
+    get owner(): string {
+        return this._owner;
     }
 
     get clientOptions(): ClientOptions {

@@ -11,10 +11,16 @@ export default class EvalCommand implements Command {
         ) as SlashCommandBuilder;
 
     execute(client: BotClient, interaction: ChatInputCommandInteraction): void {
-        if (interaction.member?.user.id == '1068094601962991666') {
+        if (interaction.member?.user.id == client.config.owner) {
             const code = interaction.options.getString('code');
             if (code) {
-                eval(code);
+                try {
+                    eval(code);
+                } catch (error) {
+                    if (error instanceof Error) {
+                        client.logger.error(`${error.name}: ${error.message}\n${error.stack}`);
+                    }
+                }
             }
         }
     }

@@ -28,7 +28,7 @@ export class AddPoll extends BasePoll {
     protected handleResults(poll: Poll): void {
         const yes = poll.answers.get(1)?.voteCount || 0;
         const no = poll.answers.get(2)?.voteCount || 0;
-        const channel = this.client.channels.cache.get(this.client.config.bannedchannel) as TextChannel;
+        const channel = this.client.channels.cache.get(this.client.config.bannedChannel) as TextChannel;
 
         if (this.validateResult(yes, no)) {
             this.targetMember.roles

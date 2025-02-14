@@ -6,6 +6,7 @@ declare global {
             VOTECHANNEL: string;
             ROLE: string;
             BANNEDCHANNEL: string;
+            OWNER: string;
         }
     }
 }

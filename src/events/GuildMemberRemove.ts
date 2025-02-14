@@ -8,7 +8,7 @@ export default class GuildMemberRemove implements Event {
 
     execute(client: BotClient, member: GuildMember): void {
         member.ban({ reason: 'Покинул сервер' }).catch(error => client.logger.error(error));
-        const channel = client.channels.cache.get('1339382880094261248') as TextChannel;
+        const channel = client.channels.cache.get(client.config.bannedChannel) as TextChannel;
 
         channel
             .send(`${member.displayName} (${member.user.tag}) забанен. Причина: **покинул сервер**.`)
