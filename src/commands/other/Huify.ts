@@ -7,7 +7,6 @@ function huify(name) {
 
     while ('бвгджзйклмнпрстфхцчшщ'.includes(name[i]) && (i < name.length)) i += 1;
 
-    console.log(i);
     if (i >= name.length - 1) {
         return 'ху' + name.slice(1);
     }
