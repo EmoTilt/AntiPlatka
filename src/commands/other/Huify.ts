@@ -18,6 +18,8 @@ export default class HuifyCommand implements Command {
     }
 
     huify(name: string) {
+        name = name.toLowerCase();
+
         let i = 0;
         while ('бвгджзйклмнпрстфхцчшщ'.includes(name[i]) && i < name.length) i += 1;
 
