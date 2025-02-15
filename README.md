@@ -5,6 +5,9 @@ To install dependencies:
 ```bash
 bun i
 ```
+```bash
+bunx prisma generate
+```
 
 ```bash
 bunx prisma db push
