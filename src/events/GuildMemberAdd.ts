@@ -13,7 +13,7 @@ export default class GuildMemberAdd implements Event {
         const poll = new AddPoll({
             client: client,
             targetMember: member,
-            duration: 1,
+            duration: 8,
         });
         poll.send().catch(error => client.logger.error(error));
     }

@@ -60,7 +60,7 @@ export abstract class BasePoll {
     }
 
     private async startTimer(remainingTime?: number): Promise<void> {
-        const timeoutDuration = remainingTime || this.duration * 60 * 1000;
+        const timeoutDuration = remainingTime || this.duration * 60 * 60 * 1000;
         try {
             this.timeout = setTimeout(() => {
                 void (async () => {
@@ -77,7 +77,7 @@ export abstract class BasePoll {
                     data: {
                         memberId: this.targetMember.id,
                         messageId: this.pollMessage.id,
-                        date: Date.now() + this.duration * 60 * 1000,
+                        date: Date.now() + this.duration * 60 * 60 * 1000,
                         action: this.action,
                     },
                 });
