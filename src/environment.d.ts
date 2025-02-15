@@ -7,6 +7,7 @@ declare global {
             ROLE: string;
             BANNEDCHANNEL: string;
             OWNER: string;
+            GUILD: string;
         }
     }
 }

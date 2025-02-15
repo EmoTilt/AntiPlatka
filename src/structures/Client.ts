@@ -4,6 +4,7 @@ import { Command } from '../interfaces';
 import Logger from './Logger';
 import Config from './Config';
 import { PrismaClient } from '@prisma/client';
+import restorePolls from './poll/RestorePoll';
 
 export default class BotClient extends Client {
     commands: Collection<string, Command> = new Collection();
@@ -24,5 +25,6 @@ export default class BotClient extends Client {
         await new Handler(this).events();
         await this.login(process.env.TOKEN);
         await new Handler(this).commands();
+        await restorePolls(this);
     }
 }

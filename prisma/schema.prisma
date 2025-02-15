@@ -11,8 +11,8 @@ datasource db {
 }
 
 model UserPoll {
-  id      String @unique
-  message String
-  date    BigInt
-  action  String
+  memberId  String @unique
+  messageId String @unique
+  date      BigInt
+  action    String
 }

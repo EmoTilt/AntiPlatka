@@ -1,0 +1,595 @@
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/prisma/schema.prisma b/prisma/schema.prisma
+--- a/prisma/schema.prisma	2025-02-14 01:37:25.035879243 +0500
++++ b/prisma/schema.prisma	2025-02-15 22:20:15.962486975 +0500
+@@ -11,8 +11,8 @@
+ }
+ 
+ model UserPoll {
+-  id      String @unique
+-  message String
+-  date    BigInt
+-  action  String
++  memberId  String @unique
++  messageId String @unique
++  date      BigInt
++  action    String
+ }
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/environment.d.ts b/src/environment.d.ts
+--- a/src/environment.d.ts	2025-02-14 23:20:05.607237974 +0500
++++ b/src/environment.d.ts	2025-02-15 22:20:15.962486975 +0500
+@@ -7,6 +7,7 @@
+             ROLE: string;
+             BANNEDCHANNEL: string;
+             OWNER: string;
++            GUILD: string;
+         }
+     }
+ }
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/events/GuildMemberAdd.ts b/src/events/GuildMemberAdd.ts
+--- a/src/events/GuildMemberAdd.ts	2025-02-14 01:37:25.035879243 +0500
++++ b/src/events/GuildMemberAdd.ts	2025-02-15 22:20:15.962486975 +0500
+@@ -1,7 +1,7 @@
+ import { Events, GuildMember, TextChannel } from 'discord.js';
+ import { Event } from '../interfaces';
+ import BotClient from '../structures/Client';
+-import { AddPoll } from '../structures/AddPoll';
++import { AddPoll } from '../structures/poll/AddPoll';
+ 
+ export default class GuildMemberAdd implements Event {
+     name = Events.GuildMemberAdd;
+@@ -10,7 +10,11 @@
+     execute(client: BotClient, member: GuildMember): void {
+         const channel = client.channels.cache.get(client.config.voteChannel) as TextChannel;
+         if (!channel) return;
+-        const poll = new AddPoll(client, member, 8);
++        const poll = new AddPoll({
++            client: client,
++            targetMember: member,
++            duration: 8,
++        });
+         poll.send().catch(error => client.logger.error(error));
+     }
+ }
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/structures/AddPoll.ts b/src/structures/AddPoll.ts
+--- a/src/structures/AddPoll.ts	2025-02-14 23:20:05.607237974 +0500
++++ b/src/structures/AddPoll.ts	1970-01-01 05:00:00.000000000 +0500
+@@ -1,59 +0,0 @@
+-import { GuildMember, Poll, TextChannel } from 'discord.js';
+-import { BasePoll } from './BasePoll';
+-import BotClient from './Client';
+-
+-export class AddPoll extends BasePoll {
+-    protected get action(): string {
+-        return 'add';
+-    }
+-
+-    protected get textVotePass(): string {
+-        return `<@${this.targetMember.id}> прошёл на сервер!`;
+-    }
+-
+-    protected get textVoteFailed(): string {
+-        return `<@${this.targetMember.id}> не прошёл на сервер! Порог меньше 70%.`;
+-    }
+-
+-    constructor(client: BotClient, targetMember: GuildMember, duration: number) {
+-        super(
+-            client,
+-            targetMember,
+-            duration,
+-            `<@${targetMember.id}>`,
+-            'На сервер зашёл новый участник. Давайте решим: стоит ли его принять в наш Discord сервер? Порог - 70% голосов "Да"',
+-        );
+-    }
+-
+-    protected handleResults(poll: Poll): void {
+-        const yes = poll.answers.get(1)?.voteCount || 0;
+-        const no = poll.answers.get(2)?.voteCount || 0;
+-        const channel = this.client.channels.cache.get(this.client.config.bannedChannel) as TextChannel;
+-
+-        if (this.validateResult(yes, no)) {
+-            this.targetMember.roles
+-                .add(this.client.config.role)
+-                .catch(error => this.client.logger.error(error));
+-        } else {
+-            this.targetMember
+-                .ban({ reason: 'Отвергли при заходе' })
+-                .catch(error => this.client.logger.error(error));
+-
+-            channel
+-                .send(
+-                    `${this.targetMember.displayName} (${this.targetMember.user.tag}) забанен. Причина: **покинул сервер**.`,
+-                )
+-                .catch(error => this.client.logger.error(error));
+-        }
+-
+-        this.client.db.userPoll
+-            .delete({
+-                where: {
+-                    id: this.targetMember.id,
+-                },
+-            })
+-            .catch(error => this.client.logger.error(error));
+-
+-        this.finishPoll(yes, no);
+-    }
+-}
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/structures/BasePoll.ts b/src/structures/BasePoll.ts
+--- a/src/structures/BasePoll.ts	2025-02-14 01:37:25.035879243 +0500
++++ b/src/structures/BasePoll.ts	1970-01-01 05:00:00.000000000 +0500
+@@ -1,119 +0,0 @@
+-import { GuildMember, TextChannel, Message, Poll, MessageCreateOptions, EmbedBuilder } from 'discord.js';
+-import BotClient from './Client';
+-
+-export abstract class BasePoll {
+-    public pollMessage!: Message;
+-    private timeout!: Timer;
+-    channel: TextChannel;
+-
+-    protected abstract get action(): string;
+-    protected abstract get textVotePass(): string;
+-    protected abstract get textVoteFailed(): string;
+-
+-    constructor(
+-        protected client: BotClient,
+-        protected targetMember: GuildMember,
+-        private duration: number,
+-        private content: string,
+-        private question: string,
+-    ) {
+-        this.channel = client.channels.cache.get(client.config.voteChannel) as TextChannel;
+-    }
+-
+-    public async send(): Promise<void> {
+-        const options: MessageCreateOptions = {
+-            content: this.content,
+-            poll: {
+-                question: { text: this.question },
+-                duration: this.duration,
+-                answers: [
+-                    { text: 'Да', emoji: '✅' },
+-                    { text: 'Нет', emoji: '❌' },
+-                ],
+-                allowMultiselect: false,
+-            },
+-        };
+-
+-        this.pollMessage = await this.channel.send(options);
+-        this.startTimer().catch(error => this.client.logger.error(error));
+-    }
+-
+-    private async startTimer(): Promise<void> {
+-        this.timeout = setTimeout(
+-            () => {
+-                this.fetchAndProcessResults().catch(error => this.client.logger.error(error));
+-            },
+-            this.duration * 60 * 60 * 1000,
+-        );
+-
+-        await this.client.db.userPoll.create({
+-            data: {
+-                id: this.targetMember.id,
+-                message: this.pollMessage.id,
+-                date: Date.now() + this.duration * 60 * 60 * 1000,
+-                action: this.action,
+-            },
+-        });
+-    }
+-
+-    private async fetchAndProcessResults(): Promise<void> {
+-        const fetchedMessage = await this.pollMessage.fetch();
+-        if (!fetchedMessage) return;
+-        const poll = fetchedMessage.poll!;
+-
+-        this.handleResults(poll);
+-
+-        clearTimeout(this.timeout);
+-    }
+-
+-    protected finishPoll(yes: number, no: number) {
+-        this.pollMessage.delete().catch(error => this.client.logger.error(error));
+-        const percent = (yes / (yes + no)) * 100;
+-        if (this.validateResult(yes, no)) {
+-            this.channel
+-                .send({
+-                    content: this.textVotePass,
+-                    embeds: [
+-                        new EmbedBuilder()
+-                            .setColor('#008000')
+-                            .setTitle('Результат:')
+-                            .addFields({
+-                                name: '✅ За',
+-                                value: `**${percent}%**`,
+-                            }),
+-                    ],
+-                })
+-                .catch(error => this.client.logger.error(error));
+-        } else {
+-            this.channel
+-                .send({
+-                    content: this.textVoteFailed,
+-                    embeds: [
+-                        new EmbedBuilder().setColor('#008000').addFields({
+-                            name: '✅ За',
+-                            value: percent.toString(),
+-                        }),
+-                    ],
+-                })
+-                .catch(error => this.client.logger.error(error));
+-        }
+-    }
+-
+-    public validateResult(yes: number, no: number) {
+-        const total = yes + no;
+-
+-        if (yes === 0 && no === 0) {
+-            return false;
+-        }
+-
+-        const yesPercentage = (yes / total) * 100;
+-
+-        if (yesPercentage > 70) {
+-            return true;
+-        } else {
+-            return false;
+-        }
+-    }
+-
+-    protected abstract handleResults(poll: Poll): void;
+-}
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/structures/Client.ts b/src/structures/Client.ts
+--- a/src/structures/Client.ts	2025-02-14 01:37:25.035879243 +0500
++++ b/src/structures/Client.ts	2025-02-15 22:32:02.698750836 +0500
+@@ -4,6 +4,7 @@
+ import Logger from './Logger';
+ import Config from './Config';
+ import { PrismaClient } from '@prisma/client';
++import restorePolls from './poll/RestorePoll';
+ 
+ export default class BotClient extends Client {
+     commands: Collection<string, Command> = new Collection();
+@@ -24,5 +25,6 @@
+         await new Handler(this).events();
+         await this.login(process.env.TOKEN);
+         await new Handler(this).commands();
++        await restorePolls(this);
+     }
+ }
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/structures/Config.ts b/src/structures/Config.ts
+--- a/src/structures/Config.ts	2025-02-14 23:20:05.607237974 +0500
++++ b/src/structures/Config.ts	2025-02-15 22:20:15.962486975 +0500
+@@ -6,6 +6,7 @@
+     private readonly _role: string;
+     private readonly _bannedChannel: string;
+     private readonly _owner: string;
++    private readonly _guild: string;
+ 
+     private readonly _clientOptions: ClientOptions;
+ 
+@@ -15,6 +16,7 @@
+         this._role = process.env.ROLE;
+         this._bannedChannel = process.env.BANNEDCHANNEL;
+         this._owner = process.env.OWNER;
++        this._guild = process.env.GUILD;
+ 
+         this._clientOptions = {
+             intents: [
+@@ -46,6 +48,10 @@
+         return this._owner;
+     }
+ 
++    get guild(): string {
++        return this._guild;
++    }
++
+     get clientOptions(): ClientOptions {
+         return this._clientOptions;
+     }
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/structures/poll/AddPoll.ts b/src/structures/poll/AddPoll.ts
+--- a/src/structures/poll/AddPoll.ts	1970-01-01 05:00:00.000000000 +0500
++++ b/src/structures/poll/AddPoll.ts	2025-02-15 22:20:15.962486975 +0500
+@@ -0,0 +1,52 @@
++import { Poll, TextChannel } from 'discord.js';
++import { BasePoll } from './BasePoll';
++import { PollConstructorParams } from './PollTypes';
++
++export class AddPoll extends BasePoll {
++    protected get action(): string {
++        return 'add';
++    }
++
++    protected get textVotePass(): string {
++        return `Участник ${this.targetMember} принят на сервер!`;
++    }
++
++    protected get textVoteFailed(): string {
++        return `Участник ${this.targetMember.id} не прошёл голосование. Требуется 70% голосов "За".`;
++    }
++
++    constructor(params: PollConstructorParams) {
++        super({
++            ...params,
++            question:
++                'Принять нового участника на сервер? Давайте решим: стоит ли его принять в наш Discord сервер? Порог - 70% голосов "Да"',
++        });
++    }
++
++    protected async handleResults(poll: Poll): Promise<void> {
++        const yes = poll.answers.get(1)?.voteCount || 0;
++        const no = poll.answers.get(2)?.voteCount || 0;
++
++        try {
++            if (this.validateResult(yes, no)) {
++                await this.targetMember.roles.add(this.client.config.role);
++            } else {
++                await this.targetMember.ban({ reason: 'Отклонено голосованием' });
++                const bannedChannel = this.client.channels.cache.get(this.client.config.bannedChannel);
++                if (bannedChannel instanceof TextChannel) {
++                    try {
++                        await bannedChannel.send(
++                            `${this.targetMember.user.tag} (${this.targetMember.id}) забанен. Причина: **отклонён голосованием**.`,
++                        );
++                    } catch (error) {
++                        this.client.logger.error(`Не удалось отправить сообщение о бане в канал: ${error}`);
++                    }
++                }
++            }
++        } catch (error) {
++            this.client.logger.error(`Ошибка при обработке результатов голосования: ${error}`);
++        } finally {
++            await this.finishPoll(yes, no);
++        }
++    }
++}
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/structures/poll/BasePoll.ts b/src/structures/poll/BasePoll.ts
+--- a/src/structures/poll/BasePoll.ts	1970-01-01 05:00:00.000000000 +0500
++++ b/src/structures/poll/BasePoll.ts	2025-02-15 22:31:18.978239648 +0500
+@@ -0,0 +1,140 @@
++import { GuildMember, TextChannel, Message, Poll, MessageCreateOptions, EmbedBuilder } from 'discord.js';
++import BotClient from '../Client';
++import { PollConstructorParams } from './PollTypes';
++
++export abstract class BasePoll {
++    public pollMessage!: Message;
++    private timeout!: Timer;
++    channel: TextChannel;
++    client: BotClient;
++    targetMember: GuildMember;
++    duration: number;
++    content: string;
++    question: string;
++
++    protected abstract get action(): string;
++    protected abstract get textVotePass(): string;
++    protected abstract get textVoteFailed(): string;
++
++    constructor(params: PollConstructorParams) {
++        if (params.duration <= 0) throw new Error('Продолжительность должна быть положительным числом');
++        if (params.question && params.question.length > 300)
++            throw new Error('Вопрос опроса превышает 300 символов');
++
++        this.client = params.client;
++        this.targetMember = params.targetMember;
++        this.duration = params.duration;
++        this.content = params.content ?? params.targetMember.toString();
++        this.question = params.question ?? '';
++
++        const channel = this.client.channels.cache.get(this.client.config.voteChannel);
++        if (!(channel instanceof TextChannel)) {
++            throw new Error('Канал голосования не является текстовым каналом.');
++        }
++        this.channel = channel;
++    }
++
++    public async send(): Promise<void> {
++        try {
++            const options: MessageCreateOptions = {
++                content: this.content,
++                poll: {
++                    question: { text: this.question },
++                    duration: this.duration,
++                    answers: [
++                        { text: 'Да', emoji: '✅' },
++                        { text: 'Нет', emoji: '❌' },
++                    ],
++                    allowMultiselect: false,
++                },
++            };
++
++            this.pollMessage = await this.channel.send(options);
++            await this.startTimer();
++        } catch (error) {
++            this.client.logger.error(`Не удалось отправить голосование: ${error}`);
++            throw error;
++        }
++    }
++
++    private async startTimer(remainingTime?: number): Promise<void> {
++        const timeoutDuration = remainingTime || this.duration * 60 * 60 * 1000;
++        try {
++            this.timeout = setTimeout(() => {
++                void (async () => {
++                    try {
++                        await this.fetchAndProcessResults();
++                    } catch (error) {
++                        this.client.logger.error(`Обработка голосования не удалась: ${error}`);
++                    }
++                })();
++            }, timeoutDuration);
++
++            await this.client.db.userPoll.create({
++                data: {
++                    memberId: this.targetMember.id,
++                    messageId: this.pollMessage.id,
++                    date: Date.now() + this.duration * 60 * 60 * 1000,
++                    action: this.action,
++                },
++            });
++        } catch (error) {
++            clearTimeout(this.timeout);
++            this.client.logger.error(`Не удалось запустить отсчёт опроса: ${error}`);
++            throw error;
++        }
++    }
++
++    private async fetchAndProcessResults(): Promise<void> {
++        try {
++            const fetchedMessage = await this.pollMessage.fetch(true);
++            if (!fetchedMessage?.poll) {
++                this.client.logger.error('Сообщение голосования не найдено.');
++                return;
++            }
++
++            await this.handleResults(fetchedMessage.poll);
++        } catch (error) {
++            this.client.logger.error(`Не удалось обработать результаты голосования: ${error}`);
++        } finally {
++            clearTimeout(this.timeout);
++        }
++    }
++    protected async finishPoll(yes: number, no: number): Promise<void> {
++        try {
++            await this.pollMessage.delete();
++        } catch (error) {
++            this.client.logger.error(`Не удалось удалить голосование: ${error}`);
++        }
++
++        const total = yes + no;
++        const yesPercentage = total > 0 ? (yes / total) * 100 : 0;
++        const resultEmbed = new EmbedBuilder()
++            .setTitle('Результат')
++            .setColor(this.validateResult(yes, no) ? '#397b44' : '#bc2d2d')
++            .addFields(
++                { name: '✅ За', value: `${yes} (${yesPercentage.toFixed(1)}%)`, inline: true },
++                { name: '❌ Против', value: `${no} (${(100 - yesPercentage).toFixed(1)}%)`, inline: true },
++            );
++
++        await this.channel.send({
++            content: this.validateResult(yes, no) ? this.textVotePass : this.textVoteFailed,
++            embeds: [resultEmbed],
++        });
++
++        try {
++            await this.client.db.userPoll.delete({
++                where: { memberId: this.targetMember.id },
++            });
++        } catch (error) {
++            this.client.logger.error(`Failed to clean up poll record: ${error}`);
++        }
++    }
++
++    public validateResult(yes: number, no: number): boolean {
++        const total = yes + no;
++        return total > 0 && (yes / total) * 100 >= 70;
++    }
++
++    protected abstract handleResults(poll: Poll): Promise<void>;
++}
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/structures/poll/PollTypes.ts b/src/structures/poll/PollTypes.ts
+--- a/src/structures/poll/PollTypes.ts	1970-01-01 05:00:00.000000000 +0500
++++ b/src/structures/poll/PollTypes.ts	2025-02-15 22:20:15.966487019 +0500
+@@ -0,0 +1,11 @@
++import { GuildMember } from 'discord.js';
++import BotClient from '../Client';
++
++export type PollConstructorParams = {
++    client: BotClient;
++    targetMember: GuildMember;
++    duration: number;
++    content?: string;
++    question?: string;
++    isRestored?: boolean;
++};
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/src/structures/poll/RestorePoll.ts b/src/structures/poll/RestorePoll.ts
+--- a/src/structures/poll/RestorePoll.ts	1970-01-01 05:00:00.000000000 +0500
++++ b/src/structures/poll/RestorePoll.ts	2025-02-15 22:31:08.474116831 +0500
+@@ -0,0 +1,58 @@
++import { TextChannel } from 'discord.js';
++import BotClient from '../Client';
++import { AddPoll } from './AddPoll';
++import { BasePoll } from './BasePoll';
++
++export default async function restorePolls(client: BotClient): Promise<void> {
++    try {
++        const polls = await client.db.userPoll.findMany();
++
++        for (const pollRecord of polls) {
++            const channel = client.channels.cache.get(client.config.voteChannel);
++            if (!(channel instanceof TextChannel)) continue;
++
++            try {
++                const message = await channel.messages.fetch(pollRecord.messageId);
++                if (!message) {
++                    await client.db.userPoll.delete({ where: { messageId: pollRecord.messageId } });
++                    continue;
++                }
++
++                const guild = client.guilds.cache.get(client.config.guild);
++                if (!guild) continue;
++
++                const targetMember = await guild.members.fetch(pollRecord.memberId);
++                let poll: BasePoll;
++
++                switch (pollRecord.action) {
++                    case 'add':
++                        // isRestored = true
++                        poll = new AddPoll({
++                            client: client,
++                            targetMember: targetMember,
++                            duration: 0,
++                            isRestored: true,
++                        });
++                        break;
++                    default:
++                        continue;
++                }
++
++                poll.pollMessage = message;
++                const remainingTime = Number(pollRecord.date) - Date.now();
++
++                // :]
++                if (remainingTime <= 0) {
++                    await poll['fetchAndProcessResults']();
++                } else {
++                    await poll['startTimer'](remainingTime);
++                }
++            } catch (error) {
++                client.logger.error(`Ошибка восстановления голосования: ${error}`);
++                await client.db.userPoll.delete({ where: { messageId: pollRecord.messageId } });
++            }
++        }
++    } catch (error) {
++        client.logger.error(`Ошибка восстановления голосований: ${error}`);
++    }
++}
+diff -Naur -x .git -x .gitignore -x bun.lock -x node_modules -x dist -x dev.db -x .env a/tsconfig.json b/tsconfig.json
+--- a/tsconfig.json	2025-02-14 01:37:25.035879243 +0500
++++ b/tsconfig.json	2025-02-15 22:20:15.966487019 +0500
+@@ -1,15 +1,13 @@
+ {
+-  "compilerOptions": {
+-    "target": "ES2020",
+-    "module": "commonjs",
+-    "strict": true,
+-    "esModuleInterop": true,
+-    "skipLibCheck": true,
+-    "forceConsistentCasingInFileNames": true,
+-    "outDir": "./dist",
+-    "lib": [
+-      "ES2021.String"
+-    ]
+-  },
+-  "include": ["src/**/*"]
+-}
+\ Ei rivinvaihtoa tiedoston lopussa
++    "compilerOptions": {
++        "target": "ES2020",
++        "module": "commonjs",
++        "strict": true,
++        "esModuleInterop": true,
++        "skipLibCheck": true,
++        "forceConsistentCasingInFileNames": true,
++        "outDir": "./dist",
++        "lib": ["ES2021.String"]
++    },
++    "include": ["src/**/*"]
++}

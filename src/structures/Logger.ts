@@ -25,13 +25,19 @@ export default class Logger {
     }
 
     public error(message: unknown): void {
-        console.error(message);
+        let errorMessage;
+        if (message instanceof Error) {
+            errorMessage = message.stack;
+        } else {
+            errorMessage = message;
+        }
+        console.error(errorMessage);
 
         if (this.logChannelId) {
             const channel = this.client.channels.cache.get(this.logChannelId) as TextChannel | undefined;
             if (channel && channel.isTextBased()) {
                 channel
-                    .send(`[ERROR] ${message}`)
+                    .send(`[ERROR] ${errorMessage}`)
                     .catch(error => console.error('Не удалось отправить сообщение в канал логов:', error));
             }
         }

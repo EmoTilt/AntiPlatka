@@ -6,6 +6,7 @@ class Config {
     private readonly _role: string;
     private readonly _bannedChannel: string;
     private readonly _owner: string;
+    private readonly _guild: string;
 
     private readonly _clientOptions: ClientOptions;
 
@@ -15,6 +16,7 @@ class Config {
         this._role = process.env.ROLE;
         this._bannedChannel = process.env.BANNEDCHANNEL;
         this._owner = process.env.OWNER;
+        this._guild = process.env.GUILD;
 
         this._clientOptions = {
             intents: [
@@ -44,6 +46,10 @@ class Config {
 
     get owner(): string {
         return this._owner;
+    }
+
+    get guild(): string {
+        return this._guild;
     }
 
     get clientOptions(): ClientOptions {
