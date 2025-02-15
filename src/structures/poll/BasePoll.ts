@@ -25,7 +25,7 @@ export abstract class BasePoll {
         this.client = params.client;
         this.targetMember = params.targetMember;
         this.duration = params.duration;
-        this.content = params.content ?? params.targetMember.toString();
+        this.content = params.content ?? `@everyone - ${params.targetMember.toString()}`;
         this.question = params.question ?? '';
         this.isRestored = params.isRestored ?? false;
 
