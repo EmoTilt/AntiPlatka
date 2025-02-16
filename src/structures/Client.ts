@@ -53,6 +53,6 @@ export default class BotClient extends Client {
                 }
             }
         }
-        setInterval(eternity, 5000);
+        setInterval(eternity, 60000);
     }
 }
