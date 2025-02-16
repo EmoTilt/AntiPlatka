@@ -3,8 +3,7 @@ import BotClient from '../Client';
 import { PollConstructorParams } from './PollTypes';
 
 export abstract class BasePoll {
-    public pollMessage!: Message;
-    private timeout!: Timer;
+    pollMessage!: Message;
     channel: TextChannel;
     client: BotClient;
     targetMember: GuildMember;
@@ -13,9 +12,13 @@ export abstract class BasePoll {
     question: string;
     isRestored: boolean;
 
+    abstract get isCloseable(): boolean;
+
     protected abstract get action(): string;
     protected abstract get textVotePass(): string;
     protected abstract get textVoteFailed(): string;
+
+    private timeout!: Timer;
 
     constructor(params: PollConstructorParams) {
         if (params.duration <= 0) throw new Error('Продолжительность должна быть положительным числом');
@@ -34,6 +37,14 @@ export abstract class BasePoll {
             throw new Error('Канал голосования не является текстовым каналом.');
         }
         this.channel = channel;
+
+        this.client.currentPolls.add(this);
+    }
+
+    public closeIfClosable() {
+        if (this.isCloseable) {
+            this.fetchAndProcessResults().catch(this.client.logger.error);
+        }
     }
 
     public async send(): Promise<void> {
@@ -144,6 +155,7 @@ export abstract class BasePoll {
         });
 
         try {
+            this.client.currentPolls.delete(this);
             await this.client.db.userPoll.delete({
                 where: { messageId: this.pollMessage.id },
             });

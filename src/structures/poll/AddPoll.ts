@@ -15,6 +15,20 @@ export class AddPoll extends BasePoll {
         return `Участник ${this.targetMember.id} не прошёл голосование. Требуется 70% голосов "За".`;
     }
 
+    public get isCloseable(): boolean {
+        const poll = this.pollMessage?.poll;
+        if (poll === null) {
+            return false;
+        }
+        this.pollMessage?.fetch(true).catch(error => this.client.logger.error(error));
+        const yes = poll.answers.get(1)?.voteCount;
+        let properMembersCount = this.client.properMembersCount;
+        if (properMembersCount === undefined || yes === undefined) {
+            return false;
+        }
+        return yes / properMembersCount > 0.7;
+    }
+
     constructor(params: PollConstructorParams) {
         super({
             ...params,
@@ -44,7 +58,7 @@ export class AddPoll extends BasePoll {
                 }
             }
         } catch (error) {
-            this.client.logger.error(`Ошибка при обработке результатов голосования: ${error}`);
+            this.client.logger.error(error);
         } finally {
             await this.finishPoll(yes, no);
         }
