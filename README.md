@@ -1,4 +1,4 @@
-# antiplatka
+# I hate TypeScript
 
 To install dependencies:
 
