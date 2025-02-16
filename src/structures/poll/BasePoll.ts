@@ -113,13 +113,23 @@ export abstract class BasePoll {
 
         const total = yes + no;
         const yesPercentage = total > 0 ? (yes / total) * 100 : 0;
+
+        const colorEmbed = this.validateResult(yes, no) ? '#397b44' : '#ab0505';
+        const memberAvatarURL = this.targetMember.displayAvatarURL() || 'https://i.imgur.com/vfnNOr7.jpeg';
+        const guildAvatarURL = this.targetMember.guild.iconURL() || 'https://i.imgur.com/7XCdb9T.png';
         const resultEmbed = new EmbedBuilder()
             .setTitle('Результат')
-            .setColor('#397b44')
-            // .setAuthor({
-            //     name: this.targetMember.displayName,
-            //     iconURL: this.targetMember.avatarURL() || '',
-            // })
+            .setColor(colorEmbed)
+            .setAuthor({
+                name: this.targetMember.displayName,
+                url: `https://discord.com/users/${this.targetMember.id}`,
+                iconURL: memberAvatarURL,
+            })
+            .setFooter({
+                text: this.targetMember.guild.name,
+                iconURL: guildAvatarURL,
+            })
+            .setTimestamp(new Date())
             .addFields(
                 { name: '✅ За', value: `**${yes}** (${yesPercentage.toFixed(1)}%)`, inline: false },
                 {
