@@ -15,6 +15,7 @@ export class AddPoll extends BasePoll {
         return `Участник ${this.targetMember.id} не прошёл голосование. Требуется 70% голосов "За".`;
     }
 
+    // Measure 256 times, cut once
     public get isCloseable(): boolean {
         const poll = this.pollMessage?.poll;
         if (poll === null) {
@@ -23,10 +24,13 @@ export class AddPoll extends BasePoll {
         this.pollMessage?.fetch(true).catch(error => this.client.logger.error(error));
         const yes = poll.answers.get(1)?.voteCount;
         let properMembersCount = this.client.properMembersCount;
-        if (properMembersCount === undefined || yes === undefined) {
+        if (properMembersCount === undefined || yes === undefined || properMembersCount == null || yes == null) {
             return false;
         }
-        return yes / properMembersCount > 0.7;
+        const perc = yes / properMembersCount; 
+        if (isFinite(perc))
+            return perc > 0.7;
+        return false;
     }
 
     constructor(params: PollConstructorParams) {
